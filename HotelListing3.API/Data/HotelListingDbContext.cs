@@ -12,7 +12,7 @@ namespace HotelListing3.API.Data
         public DbSet<Country> Countries { get; set; }
 
 
-        ///////   SEEDING
+        ////////////////////////////////   SEEDING
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
