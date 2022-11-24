@@ -2,6 +2,7 @@ using HotelListing3.API.Configurations;
 using HotelListing3.API.Contracts;
 using HotelListing3.API.Data;
 using HotelListing3.API.Repository;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Serilog;
 
@@ -18,6 +19,18 @@ var connectionString = builder.Configuration.GetConnectionString("HotelListingDb
 builder.Services.AddDbContext<HotelListingDbContext>(options => {
     options.UseSqlServer(connectionString);
 });
+
+
+
+
+// para Security
+// necesito intalar nuGet " Microsoft.AspNetCore.Identity.EntityFrameworkCore "
+// builder.Services.AddIdentityCore<IdentityUser>()
+    builder.Services.AddIdentityCore<ApiUser>()
+        .AddRoles<IdentityRole>()
+        //.AddTokenProvider<DataProtectorTokenProvider<ApiUser>>("HotelListingApi")
+        .AddEntityFrameworkStores<HotelListingDbContext>();
+        //.AddDefaultTokenProviders();
 
 
 
@@ -45,6 +58,7 @@ builder.Host.UseSerilog((ctx, lc) => lc.WriteTo.Console().ReadFrom.Configuration
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<ICountriesRepository, CountriesRepository>();
 builder.Services.AddScoped<IHotelsRepository, HotelsRepository>();
+builder.Services.AddScoped<IAuthManager, AuthManager>();
 
 
 builder.Services.AddAutoMapper(typeof(MapperConfig));
