@@ -4,6 +4,7 @@ using HotelListing3.API.Data;
 using HotelListing3.API.Models.Country;
 using AutoMapper;
 using HotelListing3.API.Contracts;
+using Microsoft.AspNetCore.Authorization;
 
 namespace HotelListing3.API.Controllers
 {
@@ -42,6 +43,7 @@ namespace HotelListing3.API.Controllers
         //////////////////////////////////////////////
         // GET: api/Countries/5
         [HttpGet("{id}")]
+        [Authorize]
         public async Task<ActionResult<CountryDto>> GetCountry(int id)
         {
             var country = await _countriesRepository.GetDetails(id);
@@ -57,6 +59,7 @@ namespace HotelListing3.API.Controllers
         //////////////////////////////////////////////
         // PUT: api/Countries/5
         [HttpPut("{id}")]
+        [Authorize(Roles="Administrator")] // si tengo token p' no soy admin 403-Forbidden
         public async Task<IActionResult> PutCountry(int id, UpdateCountryDto updateCountryDto)
         {
             if (id != updateCountryDto.Id)

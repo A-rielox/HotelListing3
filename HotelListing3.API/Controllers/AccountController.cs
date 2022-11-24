@@ -44,6 +44,9 @@ public class AccountController : ControllerBase
         return Ok();
     }
 
+    // CREAR OTRO METODO DE REGISTRO Q CREE SOLO AMIN USERS ( Y Q SOLO LOS ADMINS
+    // PUEDAN ENTRAR EN ESE ENDPOINT )
+
     /// //////////////////////////////////////
     //////////////////////////////////////////////
     /// POST: api/Account/login
@@ -61,6 +64,27 @@ public class AccountController : ControllerBase
         }
 
         // en authResponse esta el token y userId
+        return Ok(authResponse);
+    }
+
+    /// //////////////////////////////////////
+    //////////////////////////////////////////////
+    //POST: api/Account/refreshToken
+    [HttpPost]
+    [Route("refreshToken")]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    public async Task<ActionResult> RefreshToken([FromBody] AuthResponseDto request)
+    {
+        var authResponse = await _authManager.VerifyRefreshToken(request);
+
+        if (authResponse == null)
+        {
+            return Unauthorized();
+        }
+
+        // en authResponse esta el token, userId y refreshToken
         return Ok(authResponse);
     }
 }

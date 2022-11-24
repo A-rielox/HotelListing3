@@ -31,10 +31,12 @@ builder.Services.AddDbContext<HotelListingDbContext>(options => {
 // builder.Services.AddIdentityCore<IdentityUser>()
     builder.Services.AddIdentityCore<ApiUser>()
         .AddRoles<IdentityRole>()
-        //.AddTokenProvider<DataProtectorTokenProvider<ApiUser>>("HotelListingApi")
-        .AddEntityFrameworkStores<HotelListingDbContext>();
-        //.AddDefaultTokenProviders();
-
+        .AddTokenProvider<DataProtectorTokenProvider<ApiUser>>("HotelListingApi")
+        .AddEntityFrameworkStores<HotelListingDbContext>()
+        .AddDefaultTokenProviders();
+// .AddDefaultTokenProviders();
+// y .AddTokenProvider<DataProtectorTokenProvider<ApiUser>>("HotelListingApi")
+// creo q solo las necesito p' el refresh-token
 
 
 builder.Services.AddControllers();
@@ -117,7 +119,7 @@ app.UseCors("AllowAll");
 
 
 
-
+app.UseAuthentication(); // pa lo del token
 app.UseAuthorization();
 
 app.MapControllers();
