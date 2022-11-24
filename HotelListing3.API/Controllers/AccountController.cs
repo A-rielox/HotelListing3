@@ -1,6 +1,5 @@
 ﻿using HotelListing3.API.Contracts;
 using HotelListing3.API.Models.Users;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HotelListing3.API.Controllers;
@@ -55,13 +54,13 @@ public class AccountController : ControllerBase
     [ProducesResponseType(StatusCodes.Status200OK)]
     public async Task<ActionResult> Login([FromBody] LoginDto loginDto)
     {
-        var isValidUser = await _authManager.Login(loginDto);
-
-        if (!isValidUser)
+        var authResponse = await _authManager.Login(loginDto);
+        if (authResponse == null)
         {
             return Unauthorized();
         }
 
-        return Ok();
+        // en authResponse esta el token y userId
+        return Ok(authResponse);
     }
 }

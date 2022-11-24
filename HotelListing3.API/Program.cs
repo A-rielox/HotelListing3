@@ -2,9 +2,12 @@ using HotelListing3.API.Configurations;
 using HotelListing3.API.Contracts;
 using HotelListing3.API.Data;
 using HotelListing3.API.Repository;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Serilog;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -59,6 +62,35 @@ builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepositor
 builder.Services.AddScoped<ICountriesRepository, CountriesRepository>();
 builder.Services.AddScoped<IHotelsRepository, HotelsRepository>();
 builder.Services.AddScoped<IAuthManager, AuthManager>();
+
+
+
+
+
+// configuracion para ocupar JWT, estas opciones son parametros que se activan aqui
+// no van a buscar un archivo con options en otro lado.
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuerSigningKey = true, // verifica mi secret-key
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ClockSkew = TimeSpan.Zero,
+            // estas ( abajo ) son las unicas q se buscan en "appsettings.json"
+            ValidIssuer = builder.Configuration["JwtSettings:Issuer"],
+            ValidAudience = builder.Configuration["JwtSettings:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8
+                    .GetBytes(builder.Configuration["JwtSettings:Key"])),
+        };
+    });
+
+
 
 
 builder.Services.AddAutoMapper(typeof(MapperConfig));
