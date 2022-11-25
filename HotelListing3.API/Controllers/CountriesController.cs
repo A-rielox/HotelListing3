@@ -5,128 +5,135 @@ using HotelListing3.API.Models.Country;
 using AutoMapper;
 using HotelListing3.API.Contracts;
 using Microsoft.AspNetCore.Authorization;
+using HotelListing3.API.Exceptions;
 
-namespace HotelListing3.API.Controllers
+namespace HotelListing3.API.Controllers;
+
+[Route("api/[controller]")]
+[ApiController]
+public class CountriesController : ControllerBase
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class CountriesController : ControllerBase
+    private readonly ICountriesRepository _countriesRepository;
+    private readonly ILogger<CountriesController> _logger;
+    private readonly IMapper _mapper;
+
+    public CountriesController( ICountriesRepository countriesRepository,
+                                ILogger<CountriesController> logger,
+                                IMapper mapper)
     {
-        private readonly ICountriesRepository _countriesRepository;
-        private readonly ILogger<CountriesController> _logger;
-        private readonly IMapper _mapper;
+        _countriesRepository = countriesRepository;
+        _logger = logger;
+        _mapper = mapper;
+    }
 
-        public CountriesController( ICountriesRepository countriesRepository,
-                                    ILogger<CountriesController> logger,
-                                    IMapper mapper)
+    /// //////////////////////////////////////
+    //////////////////////////////////////////////
+    // GET: api/Countries
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<GetCountryDto>>> GetCountries()
+    {
+        _logger.LogInformation("Agarrando todos los paises");
+
+        var countries = await _countriesRepository.GetAllAsync();
+        var records = _mapper.Map<IEnumerable<GetCountryDto>>(countries);
+
+        return Ok(records);
+    }
+
+    /// //////////////////////////////////////
+    //////////////////////////////////////////////
+    // GET: api/Countries/5
+    [HttpGet("{id}")]
+    //[Authorize]
+    public async Task<ActionResult<CountryDto>> GetCountry(int id)
+    {
+        var country = await _countriesRepository.GetDetails(id);
+
+        if (country == null)
         {
-            _countriesRepository = countriesRepository;
-            _logger = logger;
-            _mapper = mapper;
+            //_logger.LogWarning($"No record found in {nameof(GetCountry)} with id: {id}.");
+            //return NotFound();
+
+            throw new NotFoundException(nameof(GetCountry), id);
+        }
+            
+
+        var result = _mapper.Map<CountryDto>(country);
+
+        return result;
+    }
+
+    /// //////////////////////////////////////
+    //////////////////////////////////////////////
+    // PUT: api/Countries/5
+    [HttpPut("{id}")]
+    [Authorize(Roles="Administrator")] // si tengo token p' no soy admin 403-Forbidden
+    public async Task<IActionResult> PutCountry(int id, UpdateCountryDto updateCountryDto)
+    {
+        if (id != updateCountryDto.Id)
+        {
+            _logger.LogError("el id no coincide");
+
+            return BadRequest();
         }
 
-        /// //////////////////////////////////////
-        //////////////////////////////////////////////
-        // GET: api/Countries
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<GetCountryDto>>> GetCountries()
+        var country = await _countriesRepository.GetAsync(id);
+
+        if (country == null) return NotFound();
+
+        // usa la data de updatedCountryDto para editar country, y ya 
+        _mapper.Map(updateCountryDto, country);
+
+        try
         {
-            _logger.LogInformation("Agarrando todos los paises");
-
-            var countries = await _countriesRepository.GetAllAsync();
-            var records = _mapper.Map<IEnumerable<GetCountryDto>>(countries);
-
-            return Ok(records);
+            await _countriesRepository.UpdateAsync(country);
         }
-
-        /// //////////////////////////////////////
-        //////////////////////////////////////////////
-        // GET: api/Countries/5
-        [HttpGet("{id}")]
-        [Authorize]
-        public async Task<ActionResult<CountryDto>> GetCountry(int id)
+        catch (DbUpdateConcurrencyException)
         {
-            var country = await _countriesRepository.GetDetails(id);
-
-            if (country == null) return NotFound();
-
-            var result = _mapper.Map<CountryDto>(country);
-
-            return result;
-        }
-
-        /// //////////////////////////////////////
-        //////////////////////////////////////////////
-        // PUT: api/Countries/5
-        [HttpPut("{id}")]
-        [Authorize(Roles="Administrator")] // si tengo token p' no soy admin 403-Forbidden
-        public async Task<IActionResult> PutCountry(int id, UpdateCountryDto updateCountryDto)
-        {
-            if (id != updateCountryDto.Id)
+            if (!await CountryExists(id))
             {
-                _logger.LogError("el id no coincide");
-
-                return BadRequest();
+                return NotFound();
             }
-
-            var country = await _countriesRepository.GetAsync(id);
-
-            if (country == null) return NotFound();
-
-            // usa la data de updatedCountryDto para editar country, y ya 
-            _mapper.Map(updateCountryDto, country);
-
-            try
+            else
             {
-                await _countriesRepository.UpdateAsync(country);
+                throw;
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!await CountryExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
         }
 
-        /// //////////////////////////////////////
-        //////////////////////////////////////////////
-        // POST: api/Countries
-        [HttpPost]
-        public async Task<ActionResult<Country>> PostCountry(CreateCountryDto createCountryDto)
-        {
-            var country = _mapper.Map<Country>(createCountryDto);
+        return NoContent();
+    }
 
-            var result = await _countriesRepository.AddAsync(country);
+    /// //////////////////////////////////////
+    //////////////////////////////////////////////
+    // POST: api/Countries
+    [HttpPost]
+    public async Task<ActionResult<Country>> PostCountry(CreateCountryDto createCountryDto)
+    {
+        var country = _mapper.Map<Country>(createCountryDto);
 
-            return CreatedAtAction("GetCountry", new { id = result.Id }, result);
-        }
+        var result = await _countriesRepository.AddAsync(country);
 
-        /// //////////////////////////////////////
-        //////////////////////////////////////////////
-        // DELETE: api/Countries/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteCountry(int id)
-        {
-            var country = await _countriesRepository.GetAsync(id);
-            if (country == null) return NotFound();
+        return CreatedAtAction("GetCountry", new { id = result.Id }, result);
+    }
 
-            await _countriesRepository.DeleteAsync(id);
+    /// //////////////////////////////////////
+    //////////////////////////////////////////////
+    // DELETE: api/Countries/5
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteCountry(int id)
+    {
+        var country = await _countriesRepository.GetAsync(id);
+        if (country == null) return NotFound();
 
-            return NoContent();
-        }
+        await _countriesRepository.DeleteAsync(id);
 
-        /// //////////////////////////////////////
-        //////////////////////////////////////////////
-        private async Task<bool> CountryExists(int id)
-        {
-            return await _countriesRepository.Exist(id);
-        }
+        return NoContent();
+    }
+
+    /// //////////////////////////////////////
+    //////////////////////////////////////////////
+    private async Task<bool> CountryExists(int id)
+    {
+        return await _countriesRepository.Exist(id);
     }
 }

@@ -1,6 +1,7 @@
 using HotelListing3.API.Configurations;
 using HotelListing3.API.Contracts;
 using HotelListing3.API.Data;
+using HotelListing3.API.Middleware;
 using HotelListing3.API.Repository;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -108,6 +109,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+
+
+app.UseMiddleware<ExceptionMiddleware>(); // para mi manejo custom de errores
+
+
 
 app.UseHttpsRedirection();
 
